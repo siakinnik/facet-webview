@@ -44,6 +44,7 @@ const char* kPolicies = R"({
     "DisablePocket": true,
     "DisableProfileImport": true,
     "DontCheckDefaultBrowser": true,
+    "EncryptedMediaExtensions": { "Enabled": true, "Locked": true },
     "NoDefaultBookmarks": true,
     "OverrideFirstRunPage": "",
     "OverridePostUpdatePage": "",

@@ -58,6 +58,10 @@ user_pref("widget.use-xdg-desktop-portal.file-picker", 0);
 user_pref("widget.use-xdg-desktop-portal.mime-handler", 0);
 user_pref("widget.use-xdg-desktop-portal.settings", 0);
 user_pref("media.hardware-video-decoding.enabled", false);
+user_pref("media.eme.enabled", true);
+user_pref("media.gmp-widevinecdm.enabled", true);
+user_pref("media.gmp-widevinecdm.visible", true);
+user_pref("media.gmp-manager.updateEnabled", true);
 )";
 }
 

@@ -1,10 +1,14 @@
-// Example app module: one web page (the address in the file "url" next to
-// the executable) full screen on its own screen, through the web.runtime
-// capability. A template for web apps such as a web messenger.
+// App module for one web site: the page (the address in the file "url" next
+// to the executable) full screen on its own screen, through the web.runtime
+// capability. The executable is the same for every site: id, name and
+// version come from the manifest.json next to it, so an app for another site
+// is a copy of this directory with its own manifest and url.
 #include <unistd.h>
 
 #include <fstream>
+#include <iterator>
 #include <string>
+#include <utility>
 
 #include "facet/plugin.h"
 #include "i18n/i18n.h"
@@ -17,11 +21,30 @@ using facet::sdk::Screen;
 
 namespace {
 
-std::string read_url() {
+std::string exe_dir() {
     char exe[4096] = {};
     ssize_t n = readlink("/proc/self/exe", exe, sizeof exe - 1);
     std::string dir = n > 0 ? std::string(exe, size_t(n)) : std::string();
-    std::ifstream f(dir.substr(0, dir.rfind('/')) + "/url");
+    return dir.substr(0, dir.rfind('/'));
+}
+
+Json read_manifest() {
+    std::ifstream f(exe_dir() + "/manifest.json");
+    std::string text((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+    Json m;
+    if (!Json::parse(text, m)) m = Json::object();
+    return m;
+}
+
+// The manifest's name in `lang` ({"en": ..., "ru": ...} or a plain string).
+std::string localized(const Json& name, const std::string& lang) {
+    if (name.is_string()) return name.str();
+    if (name[lang].is_string()) return name[lang].str();
+    return name["en"].str();
+}
+
+std::string read_url() {
+    std::ifstream f(exe_dir() + "/url");
     std::string line;
     std::getline(f, line);
     while (!line.empty() && (line.back() == '\r' || line.back() == ' ')) line.pop_back();
@@ -30,7 +53,7 @@ std::string read_url() {
 
 class WebApp {
 public:
-    explicit WebApp(Plugin& plugin) : plugin_(plugin), view_(plugin), url_(read_url()) {
+    WebApp(Plugin& plugin, Json name) : plugin_(plugin), view_(plugin), url_(read_url()), name_(std::move(name)) {
         view_.on_state = [this](const std::string&, const std::string& state, double progress,
                                 const std::string& error) {
             state_ = state;
@@ -54,15 +77,22 @@ public:
     void tick() { view_.tick(); }
 
     void refresh() {
-        plugin_.set_tile(state_ == "running" ? "" : state_ == "installing" ? tr("Preparing the browser…") : "");
+        plugin_.set_tile(state_ == "running" ? "" : state_ == "installing" ? tr("Getting ready…") : "");
         if (!plugin_.visible()) return;
-        Screen ui(tr("Web app"));
+        std::string title = localized(name_, plugin_.catalog().language());
+        Screen ui(title.empty() ? tr("Web app") : title);
         if (!surface_.empty() && state_ == "running") ui.fullscreen(surface_);  // the page itself
         ui.info(tr("Address"), url_.empty() ? "—" : url_);
+        // Pages come from the module that provides web.runtime; how it shows
+        // them (and what it installs for that) is its business.
         if (state_ == "installing")
-            ui.level(tr("Installing Firefox"), progress_, std::to_string(int(progress_ * 100)) + "%");
-        else
-            ui.info(tr("State"), state_.empty() ? tr("connecting…") : state_);
+            ui.level(tr("The web view module is getting ready"), progress_, std::to_string(int(progress_ * 100)) + "%");
+        else if (state_.empty())
+            ui.info(tr("State"), tr("waiting for the web view module…"));
+        else if (state_ == "closed")
+            ui.info(tr("State"), tr("opening again…"));
+        else if (state_ != "running" && state_ != "error")
+            ui.info(tr("State"), tr("opening…"));
         if (!error_.empty()) ui.info(tr("Error"), error_, "bad");
         plugin_.set_ui(ui);
     }
@@ -73,15 +103,17 @@ private:
     Plugin& plugin_;
     facet::webview::WebView view_;
     std::string url_, surface_, state_, error_;
+    Json name_;
     double progress_ = 0;
 };
 
 }  // namespace
 
 int main() {
-    Plugin plugin("web-app", "0.1.0");  // keep in sync with manifest.json
+    Json manifest = read_manifest();
+    Plugin plugin(manifest["id"].as_string("web-app"), manifest["version"].as_string("0.1.0"));
     web_app::register_translations(plugin.catalog());
-    WebApp app(plugin);
+    WebApp app(plugin, manifest["name"]);
     plugin.on_hello = [&](const Json&) { app.start(); };
     plugin.on_surface_lent = [&](const std::string& id, const LentSurface&, bool available) {
         app.on_lent(id, available);

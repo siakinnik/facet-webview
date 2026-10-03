@@ -6,12 +6,14 @@ namespace web_app {
 namespace {
 const facet::i18n::Table& ru() {
     static const facet::i18n::Table table = {
-        {"Preparing the browser…", "Готовлю браузер…"},
+        {"Getting ready…", "Подготовка…"},
         {"Web app", "Веб-приложение"},
         {"Address", "Адрес"},
-        {"Installing Firefox", "Установка Firefox"},
+        {"The web view module is getting ready", "Модуль веб-страниц готовится"},
         {"State", "Состояние"},
-        {"connecting…", "подключение…"},
+        {"waiting for the web view module…", "ожидание модуля веб-страниц…"},
+        {"opening again…", "открываю снова…"},
+        {"opening…", "открываю…"},
         {"Error", "Ошибка"},
     };
     return table;

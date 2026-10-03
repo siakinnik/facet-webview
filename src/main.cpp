@@ -460,9 +460,15 @@ private:
         if (st.phase == Installer::Phase::Done) {
             if (!st.latest.empty()) latest_ = st.latest;
             if (st.installed_now) Plugin::log("firefox: installed Firefox %s", latest_.c_str());
-            for (auto& [key, v] : views_)
-                if (v.pid < 0 && v.wayland_fd >= 0 && !installer_.installed_version().empty()) launch(v);
+            bool waiting = false;
+            for (auto& [key, v] : views_) {
+                if (v.pid >= 0 || v.wayland_fd < 0) continue;
+                if (!installer_.installed_version().empty()) launch(v);
+                else waiting = true;
+            }
             installer_.acknowledge();
+            // A page was asked for while only an update check ran: install now.
+            if (waiting) installer_.start(true, lang());
         } else if (st.phase == Installer::Phase::Failed) {
             if (st.error != "cancelled") error_ = st.error;
             Plugin::log("firefox: %s", st.error.c_str());
