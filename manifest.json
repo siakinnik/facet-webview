@@ -1,0 +1,14 @@
+{
+  "id": "webview",
+  "name": { "en": "Web pages for apps", "ru": "Веб-страницы для приложений" },
+  "version": "0.1.0-alpha",
+  "api": 3,
+  "exec": "webview",
+  "permissions": [
+    { "name": "network", "reason": { "en": "Downloads Firefox from Mozilla and loads the pages apps ask for.", "ru": "Скачивает Firefox с сайта Mozilla и загружает страницы, которые просят приложения." } },
+    "background",
+    { "name": "gpu", "optional": true, "reason": { "en": "Draws pages with the graphics card (Facet's OpenGL drivers, Settings > Graphics).", "ru": "Рисует страницы видеокартой (драйверы OpenGL Facet, «Настройки > Графика»)." } }
+  ],
+  "provides": [{ "name": "web.runtime@1", "endpoint": true }],
+  "settings": true
+}

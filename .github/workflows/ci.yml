@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build libssl-dev liblzma-dev
+
+      - name: Check that code is English (translations only in i18n/)
+        run: python3 scripts/check_i18n.py
+
+      - name: Check version consistency (CMakeLists.txt vs manifest.json)
+        run: bash scripts/version.sh
+
+      - uses: actions/cache@v4
+        with:
+          path: third_party/runtime
+          key: runtime-x86_64-${{ hashFiles('RUNTIME', 'scripts/build-runtime.sh') }}
+
+      - name: Build (static, as released; runtime from Ubuntu 22.04 packages)
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DFIREFOX_STATIC=ON
+          cmake --build build
+          file build/webview.plugin/webview
+
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Protocol smoke test
+        run: bash scripts/ci/smoke.sh build/webview.plugin/webview

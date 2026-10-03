@@ -1,0 +1,16 @@
+{
+  "id": "web-app",
+  "name": { "en": "Web app", "ru": "Веб-приложение" },
+  "version": "0.1.0",
+  "api": 3,
+  "exec": "web-app",
+  "permissions": [
+    "wayland.window",
+    { "name": "wayland.clipboard", "optional": true }
+  ],
+  "requires": [
+    { "name": "display.wayland@1", "install": "siakinnik/facet-wayland" },
+    { "name": "web.runtime@1", "install": "siakinnik/facet-webview" }
+  ],
+  "tile": { "icon": "plugin" }
+}
