@@ -99,7 +99,7 @@ int main() {
           "Firefox environment");
     s.gl = "/run/facet/gl";
     env = firefox_environment(s, 3);
-    check(has("LD_LIBRARY_PATH=/rt/lib:/run/facet/gl/lib") && has("LIBGL_DRIVERS_PATH=/run/facet/gl/lib/dri"),
+    check(has("LD_LIBRARY_PATH=/p/gl:/rt/lib:/run/facet/gl/lib") && has("LIBGL_DRIVERS_PATH=/run/facet/gl/lib/dri"),
           "Firefox environment with the GPU");
     check(firefox_prefs().find("app.update.auto\", false") != std::string::npos, "updates are the module's job");
 

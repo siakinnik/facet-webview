@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(facet-webview VERSION 0.1.1 LANGUAGES CXX)
+project(facet-webview VERSION 0.1.2 LANGUAGES CXX)
 set(FIREFOX_VERSION_SUFFIX "alpha")  # pre-release tag; empty for final releases; keep manifest.json in sync
 
 set(CMAKE_CXX_STANDARD 17)

@@ -95,7 +95,10 @@ std::vector<std::string> firefox_environment(const LaunchSpec& s, int fd) {
     if (!s.gl.empty()) {
         // The graphics card through Mesa from Facet's OpenGL package; the
         // compositor hands the GPU-drawn page to Facet without copies.
-        env.push_back("LD_LIBRARY_PATH=" + s.runtime + "/lib:" + s.gl + "/lib");
+        // Firefox takes GL functions from libGL.so.1 first; the host's one
+        // (another glvnd) returns nothing through the package's dispatcher,
+        // so <profile>/gl points it at the package's libGLESv2.
+        env.push_back("LD_LIBRARY_PATH=" + s.profile + "/gl:" + s.runtime + "/lib:" + s.gl + "/lib");
         env.push_back("LIBGL_DRIVERS_PATH=" + s.gl + "/lib/dri");
         env.push_back("__EGL_VENDOR_LIBRARY_FILENAMES=" + s.gl + "/share/glvnd/egl_vendor.d/50_mesa.json");
         env.push_back("MESA_SHADER_CACHE_DIR=" + s.profile + "/cache/mesa");
@@ -109,6 +112,15 @@ pid_t launch_firefox(const LaunchSpec& s) {
     mkdirs(s.profile + "/home");
     mkdirs(s.profile + "/cache");
     mkdirs(s.run_dir);
+    if (!s.gl.empty()) {
+        mkdirs(s.profile + "/gl");
+        for (const char* name : {"/gl/libGL.so.1", "/gl/libGL.so"}) {
+            std::string link = s.profile + name;
+            ::unlink(link.c_str());
+            if (::symlink((s.gl + "/lib/libGLESv2.so.2").c_str(), link.c_str()) != 0)
+                std::perror(("symlink " + link).c_str());
+        }
+    }
     if (FILE* f = std::fopen((s.profile + "/user.js").c_str(), "w")) {
         std::fputs(firefox_prefs().c_str(), f);
         std::fclose(f);
